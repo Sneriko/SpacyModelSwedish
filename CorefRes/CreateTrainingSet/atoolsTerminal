@@ -1,0 +1,1 @@
+./atools -i ../Data/Datasets/Europarl/Documents/ep-09-03-11-018/alignments/ali.fw -j ../Data/Datasets/Europarl/Documents/ep-09-03-11-018/alignments/ali.rv  -c grow-diag-final-and > ../Data/Datasets/Europarl/Documents/ep-09-03-11-018/alignments/ali.sym
