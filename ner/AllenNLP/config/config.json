@@ -1,0 +1,75 @@
+{
+    "dataset_reader": {
+        "type": "conll2003",
+        "tag_label": "ner",
+        "token_indexers": {
+            "tokens": {
+                "type": "single_id",
+                "lowercase_tokens": true
+            },
+            "bert": {
+                "type": "pretrained_transformer_mismatched",
+                "model_name": "KB/bert-base-swedish-cased-ner"
+            },
+            "token_characters": {
+                "type": "characters",
+                "min_padding_length": 3
+            }
+        }
+    },
+    "model": {
+        "type": "crf_tagger",
+        "calculate_span_f1": true,
+        "constrain_crf_decoding": true,
+        "dropout": 0.5,
+        "encoder": {
+            "type": "lstm",
+            "bidirectional": true,
+            "dropout": 0.5,
+            "hidden_size": 200,
+            "input_size": 896,
+            "num_layers": 2
+        },
+        "include_start_end_transitions": false,
+        "label_encoding": "IOB1",
+        "text_field_embedder": {
+            "token_embedders": {
+                "bert": {
+                    "type": "pretrained_transformer_mismatched",
+                    "model_name": "KB/bert-base-swedish-cased-ner"
+                },
+                "token_characters": {
+                    "type": "character_encoding",
+                    "embedding": {
+                        "embedding_dim": 16,
+                        "vocab_namespace": "token_characters"
+                    },
+                    "encoder": {
+                        "type": "cnn",
+                        "conv_layer_activation": "relu",
+                        "embedding_dim": 16,
+                        "ngram_filter_sizes": [
+                            3
+                        ],
+                        "num_filters": 128
+                    }
+                }
+            }
+        }
+    },
+    "train_data_path": "Data/Datasets/ner/SUC3trainCONLL2003",
+    "validation_data_path": "Data/Datasets/ner/SUC3testCONLL2003",
+    "test_data_path": "Data/Datasets/ner/SUC3testCONLL2003",
+    "trainer": {
+        "cuda_device": 0,
+        "grad_norm": 5,
+        "num_epochs": 20,
+        "optimizer": {
+            "type": "adam",
+            "lr": 0.001
+        },
+        "patience": 5,
+        "validation_metric": "+f1-measure-overall"
+    },
+    "data_loader": "allennlp.data.dataloader.DataLoader"
+}

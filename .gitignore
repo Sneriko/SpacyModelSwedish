@@ -3,3 +3,5 @@ ExternalLibraries/
 Models/
 venv/
 .idea/
+allennlp/
+transformers/
