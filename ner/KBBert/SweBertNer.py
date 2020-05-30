@@ -11,10 +11,13 @@ class SweBertNer(object):
 
     def __call__(self, doc):
         sents = list(doc.sents)
+
         entitiesInSents = list(self.findEntitiesInSents(sents))
+
         entitiesTokenLists = list(self.toTokenLists(entitiesInSents))
         indicesForEntsDup = list(self.findIndicesForEnts(sents, entitiesTokenLists, doc))
 
+        #Remove duplicates
         seen, indicesForEnts = set(), []
         for ele in indicesForEntsDup:
             tp = tuple(ele[0:len(ele) - 1])
@@ -22,10 +25,13 @@ class SweBertNer(object):
                 indicesForEnts.append(ele)
             seen.add(tp)
 
+        #Create the entity spans and add them to doc.ents
         for indices in indicesForEnts:
             entity = Span(doc, indices[0], indices[len(indices) - 2] + 1, label=self.nlp.vocab.strings[indices[len(indices) - 1]])
             doc.ents = list(doc.ents) + [entity]
         return doc
+
+    #returns a list of lists of indices for each entity, entity type in the last element
 
     def findIndicesForEnts(self, sents, entitiesTokenLists, doc):
         for sent, entSent in zip(sents, entitiesTokenLists):
@@ -52,13 +58,14 @@ class SweBertNer(object):
                         entIndices = []
                         cursor = 0
 
-
+    #Run transformer ner on sentences in doc, returns a list of entity markups
     def findEntitiesInSents(self, sents):
         for sent in sents:
             tokens = list(sent)
             stringTokens = [str(x) for x in tokens]
             yield self.nlpTrans(' '.join(stringTokens))
 
+    #Returns a list of tokens for each entity, appends entity type at the end each list
     def findTokens(self, ents):
         for i, ent in enumerate(ents):
             if ent['entity'].startswith('B'):
