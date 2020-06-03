@@ -2,6 +2,9 @@ from transformers import pipeline
 
 from spacy.tokens import Doc, Span, Token
 
+from spacy.strings import StringStore
+
+
 
 class SweBertNer(object):
 
@@ -10,6 +13,8 @@ class SweBertNer(object):
         self.nlp = nlp
 
     def __call__(self, doc):
+        animal_hash = StringStore([u'LOCPRS'])
+        self.nlp.vocab.strings.add('LOCPRS')
         sents = list(doc.sents)
 
         entitiesInSents = list(self.findEntitiesInSents(sents))
@@ -25,8 +30,27 @@ class SweBertNer(object):
                 indicesForEnts.append(ele)
             seen.add(tp)
 
+        #Remove conflicting ents (save the the largest span)
+        removeIndexex = []
+        for i, subList in enumerate(indicesForEnts):
+            for j, lis in enumerate(indicesForEnts):
+                if subList == lis:
+                    continue
+                for k in range(subList[0], subList[len(subList) - 2] + 1):
+                    if k in lis and len(subList) > len(lis):
+                        removeIndexex.append(j)
+                    elif k in lis and len(lis) > len(subList):
+                        removeIndexex.append(i)
+                    else:
+                        continue
+        indicesForEntsNoConf = []
+        for i, el in enumerate(indicesForEnts):
+            if i not in removeIndexex:
+                indicesForEntsNoConf.append(el)
+
         #Create the entity spans and add them to doc.ents
-        for indices in indicesForEnts:
+        for indices in indicesForEntsNoConf:
+            print(indices[len(indices) - 1])
             entity = Span(doc, indices[0], indices[len(indices) - 2] + 1, label=self.nlp.vocab.strings[indices[len(indices) - 1]])
             doc.ents = list(doc.ents) + [entity]
         return doc
@@ -73,14 +97,14 @@ class SweBertNer(object):
                 startIndex = i
                 numOfParts = 1
                 for ent2 in ents[i + 1:]:
-                    if ent2['entity'].startswith('I'):
+                    if ent2['entity'].startswith('I') or ent2['word'].startswith('##'):
                         numOfParts += 1
                     else:
                         break
                 str = ''
                 for x in range(startIndex, startIndex + numOfParts):
                     str += (ents[x]['word'] + ' ')
-                strConcat = str.replace(' ##', '').strip()
+                strConcat = str.replace(' ##', '').replace(' - ', '-').replace(' .', '.').strip()
                 entList = strConcat.split()
                 entList.append(entityLabel)
                 yield entList
